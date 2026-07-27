@@ -10,5 +10,6 @@ tools/webdoc/webdoc_*/
 tools/webdoc/build/
 tools/webdoc/dist/
 tools/webdoc/output/
+tools/webdoc/*.spec
 dist/
 *.tsbuildinfo

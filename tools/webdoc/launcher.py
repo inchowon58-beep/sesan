@@ -12,7 +12,16 @@ import time
 import webbrowser
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+def _bundle_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            return Path(meipass)
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
+
+ROOT = _bundle_dir()
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -25,7 +34,9 @@ def _ensure_stdio() -> None:
 
 
 def _load_env() -> None:
-    root = ROOT.parent.parent  # 달빗쉘터 프로젝트 루트
+    from project_paths import project_root
+
+    root = Path(project_root())
     for name in (".env.local", ".env"):
         path = root / name
         if not path.exists():

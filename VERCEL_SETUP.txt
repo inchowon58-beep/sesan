@@ -1,0 +1,41 @@
+# 달빛쉘터 — Vercel 배포 체크리스트 (사용자가 콘솔에서 할 일)
+
+## 1) GitHub 연동
+- Vercel → Add New Project → GitHub `inchowon58-beep/sesan` Import
+- Framework: Next.js (자동 감지)
+- Root Directory: `.` (기본)
+- Build Command: `next build` / Output: 기본
+
+## 2) Blob Storage (필수)
+- Vercel → Storage → Create → Blob
+- 프로젝트에 Connect
+- 환경변수 `BLOB_READ_WRITE_TOKEN` 자동 주입 확인
+  (없으면 Storage 화면의 token을 복사해 Env에 수동 등록)
+
+## 3) Environment Variables (필수 값)
+아래를 Production / Preview / Development 모두에 등록:
+
+| 키 | 값 | 비고 |
+|---|---|---|
+| `NEXT_PUBLIC_SITE_URL` | `https://실제도메인` | 끝 `/` 없이. 예: https://dalbitshelter.puppytimes.co.kr |
+| `ADMIN_JWT_SECRET` | 긴 랜덤 문자열 | 로컬 `.env.local` 과 맞춰도 됨 |
+| `INDEXNOW_KEY` | `f4e8fb3912a5d6f628c4255cc466f799` | public 폴더 txt 와 동일 (이미 코드에 포함) |
+| `BLOB_READ_WRITE_TOKEN` | Blob 연결 시 자동 | `vercel_blob_rw_...` |
+| `GEMINI_API_KEY` | (선택) | 관리자 Gemini 발행용 |
+| `GEMINI_MODEL` | `gemini-2.5-flash` | (선택) |
+
+## 4) 도메인
+- Settings → Domains → 실제 도메인 추가
+- DNS(A/CNAME)를 Vercel 안내에 맞게 설정
+- 도메인 확정 후 `NEXT_PUBLIC_SITE_URL` 을 그 주소로 맞추고 Redeploy
+
+## 5) 배포 후 확인
+- 홈: `/`
+- 관리자: `/admin`  (아이디 `infocs` / 비번 `infocs070207`)
+- IndexNow 키 파일: `https://도메인/f4e8fb3912a5d6f628c4255cc466f799.txt`
+  → 브라우저에서 키 문자열이 그대로 보여야 함
+
+## 로컬에서 이미 처리된 것
+- IndexNow 키 파일 `public/f4e8fb3912a5d6f628c4255cc466f799.txt`
+- GitHub `sesan` 푸시
+- 로컬 대량생성 EXE 빌드 스크립트 `tools/webdoc/build_exe.bat`

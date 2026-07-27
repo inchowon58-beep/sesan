@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import threading
 from datetime import datetime
 from pathlib import Path
@@ -19,7 +20,25 @@ from content import DEFAULT_SITE_URL, generate_batch
 from indexnow import submit_indexnow
 from project_paths import project_root, webdoc_dir
 
-STATIC = Path(__file__).resolve().parent / "static"
+
+def _static_dir() -> Path:
+    """소스 실행 / PyInstaller(exe) 모두에서 static UI를 찾는다."""
+    if getattr(sys, "frozen", False):
+        meipass = getattr(sys, "_MEIPASS", None)
+        candidates = []
+        if meipass:
+            candidates.append(Path(meipass) / "static")
+        candidates.append(Path(sys.executable).resolve().parent / "static")
+        for p in candidates:
+            if p.is_dir():
+                return p
+        return candidates[0]
+    p = Path(__file__).resolve().parent / "static"
+    p.mkdir(exist_ok=True)
+    return p
+
+
+STATIC = _static_dir()
 STATIC.mkdir(exist_ok=True)
 
 app = FastAPI(title="달빛쉘터 SEO")
