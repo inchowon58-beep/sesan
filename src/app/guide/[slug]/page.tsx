@@ -168,7 +168,7 @@ export default async function GuidePage({ params }: Props) {
 
       {/* ---------- 핵심 서비스 6가지 ---------- */}
       {page.services && page.services.length > 0 && (
-        <section className="dalbit-section dalbit-section-alt mt-8">
+        <section className="dalbit-section dalbit-section-alt mt-12 md:mt-16">
           <div className="dalbit-container">
             <div className="dalbit-sec-header">
               <span className="dalbit-badge">Service</span>
@@ -205,7 +205,7 @@ export default async function GuidePage({ params }: Props) {
 
       {/* ---------- 보호·시설 안내 ---------- */}
       {facilitySection && (
-        <section className="dalbit-container max-w-3xl mt-16">
+        <section className="guide-prose-section dalbit-container max-w-3xl">
           <h2 className="font-display text-2xl text-[var(--ink)] md:text-3xl">
             {facilitySection.h2}
           </h2>
@@ -282,7 +282,7 @@ export default async function GuidePage({ params }: Props) {
 
       {/* ---------- 관련 검색 의도 ---------- */}
       {(relatedSection || (page.relatedIntents && page.relatedIntents.length > 0)) && (
-        <section className="dalbit-container max-w-3xl mt-16">
+        <section className="guide-prose-section dalbit-container max-w-3xl">
           {relatedSection && (
             <>
               <h2 className="font-display text-2xl text-[var(--ink)] md:text-3xl">
@@ -297,7 +297,7 @@ export default async function GuidePage({ params }: Props) {
             </>
           )}
           {page.relatedIntents && page.relatedIntents.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-8 flex flex-wrap gap-2">
               {page.relatedIntents.map((kw) => (
                 <span
                   key={kw}
@@ -313,7 +313,7 @@ export default async function GuidePage({ params }: Props) {
 
       {/* 하위 호환: 4개를 넘는 추가 sections가 있다면 그대로 이어서 렌더 */}
       {otherSections.map((sec, si) => (
-        <section key={sec.h2 + si} className="dalbit-container max-w-3xl mt-16">
+        <section key={sec.h2 + si} className="guide-prose-section dalbit-container max-w-3xl">
           <h2 className="font-display text-2xl text-[var(--ink)] md:text-3xl">{sec.h2}</h2>
           <div className="ornament" />
           {sec.paragraphs.map((p, pi) => (
@@ -326,7 +326,7 @@ export default async function GuidePage({ params }: Props) {
 
       {/* ---------- FAQ ---------- */}
       {page.faqs?.length > 0 && (
-        <section className="dalbit-container max-w-3xl mt-16">
+        <section className="guide-prose-section dalbit-container max-w-3xl">
           <h2 className="font-display text-2xl text-[var(--ink)] md:text-3xl">자주 묻는 질문</h2>
           <div className="ornament" />
           <div className="dalbit-faq-list">
@@ -344,8 +344,8 @@ export default async function GuidePage({ params }: Props) {
       )}
 
       {/* ---------- CTA ---------- */}
-      <div className="dalbit-container max-w-3xl mt-16 mb-4">
-        <aside className="dalbit-contact-cta flex flex-col items-center gap-4 rounded-[20px] p-8 text-center md:p-10">
+      <div className="dalbit-container max-w-3xl guide-cta-wrap">
+        <aside className="dalbit-contact-cta guide-contact-box flex flex-col items-center gap-5 text-center">
           <p className="dalbit-contact-eyebrow">Contact — 전국파양입소 · 무료분양</p>
           <p className="font-display text-xl md:text-2xl">{page.ctaText}</p>
           <a href={SITE.phoneTel} className="dalbit-contact-btn">

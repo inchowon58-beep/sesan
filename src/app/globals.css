@@ -1089,6 +1089,55 @@ body.dalbit-root .dalbit-contact-cta {
   color: #fff;
 }
 
+/* 가이드(/guide/[slug]) — 배경·큰 제목 전환 시 가독성용 여백 */
+body.dalbit-root article .guide-prose-section {
+  padding-top: 72px;
+  padding-bottom: 28px;
+}
+
+body.dalbit-root article .guide-cta-wrap {
+  margin-top: 72px;
+  margin-bottom: 28px;
+  padding-top: 8px;
+}
+
+body.dalbit-root article .guide-contact-box {
+  border-radius: 20px;
+  padding: 40px 28px;
+}
+
+@media (min-width: 768px) {
+  body.dalbit-root article .guide-prose-section {
+    padding-top: 96px;
+    padding-bottom: 36px;
+  }
+
+  body.dalbit-root article .guide-cta-wrap {
+    margin-top: 96px;
+    margin-bottom: 40px;
+  }
+
+  body.dalbit-root article .guide-contact-box {
+    padding: 52px 40px;
+  }
+}
+
+@media (max-width: 767px) {
+  body.dalbit-root article .guide-prose-section {
+    padding-top: 64px;
+    padding-bottom: 24px;
+  }
+
+  body.dalbit-root article .guide-cta-wrap {
+    margin-top: 64px;
+    margin-bottom: 24px;
+  }
+
+  body.dalbit-root article .guide-contact-box {
+    padding: 36px 22px;
+  }
+}
+
 body.dalbit-root .dalbit-contact-inner {
   display: flex;
   flex-wrap: wrap;
