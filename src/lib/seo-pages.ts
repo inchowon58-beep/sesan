@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { get, list, put } from "@vercel/blob";
 import { SITE } from "./site";
@@ -46,9 +47,6 @@ export type SeoIndex = {
   updatedAt: string;
 };
 
-const DATA_DIR = path.join(process.cwd(), "public", "seo-data");
-const PAGES_DIR = path.join(DATA_DIR, "pages");
-const INDEX_PATH = path.join(DATA_DIR, "index.json");
 const BLOB_PREFIX = "seo-data";
 
 /** Vercel Blob 스토어는 private로 사용 */
@@ -95,8 +93,36 @@ function blobPutOpts() {
   };
 }
 
+function preferredDataDir() {
+  return path.join(process.cwd(), "public", "seo-data");
+}
+
+function fallbackDataDir() {
+  return path.join(os.tmpdir(), "dalbit-shelter", "seo-data");
+}
+
+function resolveDataDir() {
+  const preferred = preferredDataDir();
+  try {
+    fs.mkdirSync(path.join(preferred, "pages"), { recursive: true });
+    return preferred;
+  } catch {
+    const fallback = fallbackDataDir();
+    fs.mkdirSync(path.join(fallback, "pages"), { recursive: true });
+    return fallback;
+  }
+}
+
+function pagesDir() {
+  return path.join(resolveDataDir(), "pages");
+}
+
+function indexPath() {
+  return path.join(resolveDataDir(), "index.json");
+}
+
 function ensureDirs() {
-  if (!fs.existsSync(PAGES_DIR)) fs.mkdirSync(PAGES_DIR, { recursive: true });
+  fs.mkdirSync(pagesDir(), { recursive: true });
 }
 
 async function streamToText(stream: ReadableStream): Promise<string> {
@@ -150,23 +176,26 @@ async function writeBlobText(pathname: string, content: string): Promise<void> {
 }
 
 function readIndexFs(): SeoIndex {
+  const file = indexPath();
   ensureDirs();
-  if (!fs.existsSync(INDEX_PATH)) {
+  if (!fs.existsSync(file)) {
     return { slugs: [], updatedAt: new Date().toISOString() };
   }
   try {
-    return JSON.parse(fs.readFileSync(INDEX_PATH, "utf-8")) as SeoIndex;
+    return JSON.parse(fs.readFileSync(file, "utf-8")) as SeoIndex;
   } catch {
     return { slugs: [], updatedAt: new Date().toISOString() };
   }
 }
 
 function writeIndexFs(index: SeoIndex) {
+  const file = indexPath();
   ensureDirs();
-  fs.writeFileSync(INDEX_PATH, JSON.stringify(index, null, 2), "utf-8");
+  fs.writeFileSync(file, JSON.stringify(index, null, 2), "utf-8");
 }
 
 function readPageFs(slug: string): SeoPage | null {
+  const dir = pagesDir();
   const candidates = [slug];
   try {
     const decoded = decodeURIComponent(slug);
@@ -175,7 +204,7 @@ function readPageFs(slug: string): SeoPage | null {
     /* ignore */
   }
   for (const key of candidates) {
-    const file = path.join(PAGES_DIR, `${key}.json`);
+    const file = path.join(dir, `${key}.json`);
     if (!fs.existsSync(file)) continue;
     try {
       return JSON.parse(fs.readFileSync(file, "utf-8")) as SeoPage;
@@ -270,8 +299,9 @@ export async function listPages(): Promise<SeoPage[]> {
     return fromIndex.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   }
 
-  if (fs.existsSync(PAGES_DIR)) {
-    const files = fs.readdirSync(PAGES_DIR).filter((f) => f.endsWith(".json"));
+  const dir = pagesDir();
+  if (fs.existsSync(dir)) {
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith(".json"));
     const pages = files
       .map((f) => readPageFs(f.replace(/\.json$/, "")))
       .filter((p): p is SeoPage => !!p);
@@ -298,7 +328,7 @@ export async function savePage(page: SeoPage): Promise<void> {
     try {
       ensureDirs();
       fs.writeFileSync(
-        path.join(PAGES_DIR, `${page.slug}.json`),
+        path.join(pagesDir(), `${page.slug}.json`),
         content,
         "utf-8"
       );

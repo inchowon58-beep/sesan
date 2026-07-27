@@ -27,6 +27,20 @@ export async function POST(req: Request) {
     const body = await req.json();
     const action = String(body.action || "save-limits");
 
+    if (action === "verify-master") {
+      if (!verifyMasterPassword(String(body.masterPassword || ""))) {
+        return NextResponse.json(
+          { error: "마스터 비밀번호가 올바르지 않습니다." },
+          { status: 403 }
+        );
+      }
+      const settings = await loadAdminSettings();
+      return NextResponse.json({
+        ok: true,
+        settings: publicSettingsView(settings),
+      });
+    }
+
     if (action === "save-gemini") {
       const geminiApiKey = String(body.geminiApiKey || "").trim();
       const settings = await saveAdminSettings({ geminiApiKey });

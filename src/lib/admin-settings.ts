@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { get, put } from "@vercel/blob";
 
@@ -18,10 +19,32 @@ export type AdminSettings = {
   updatedAt: string;
 };
 
-const DATA_DIR = path.join(process.cwd(), "public", "seo-data");
-const LOCAL_PATH = path.join(DATA_DIR, "admin-settings.json");
 const BLOB_PATH = "seo-data/admin-settings.json";
 const MASTER_PASSWORD = "ybijour80";
+
+function preferredDataDir() {
+  return path.join(process.cwd(), "public", "seo-data");
+}
+
+function fallbackDataDir() {
+  return path.join(os.tmpdir(), "dalbit-shelter", "seo-data");
+}
+
+function resolveDataDir() {
+  const preferred = preferredDataDir();
+  try {
+    fs.mkdirSync(preferred, { recursive: true });
+    return preferred;
+  } catch {
+    const fallback = fallbackDataDir();
+    fs.mkdirSync(fallback, { recursive: true });
+    return fallback;
+  }
+}
+
+function localPath() {
+  return path.join(resolveDataDir(), "admin-settings.json");
+}
 
 function kstToday(): string {
   const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -118,9 +141,10 @@ export function verifyMasterPassword(password: string): boolean {
 }
 
 export async function loadAdminSettings(): Promise<AdminSettings> {
+  const local = localPath();
   try {
-    if (fs.existsSync(LOCAL_PATH)) {
-      const raw = JSON.parse(fs.readFileSync(LOCAL_PATH, "utf8"));
+    if (fs.existsSync(local)) {
+      const raw = JSON.parse(fs.readFileSync(local, "utf8"));
       return normalize(raw);
     }
   } catch {
@@ -148,8 +172,7 @@ export async function saveAdminSettings(
   });
   const content = JSON.stringify(merged, null, 2);
   try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(LOCAL_PATH, content, "utf8");
+    fs.writeFileSync(localPath(), content, "utf8");
   } catch {
     /* Vercel read-only FS 등 */
   }

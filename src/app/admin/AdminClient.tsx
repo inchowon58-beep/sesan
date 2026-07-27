@@ -43,6 +43,9 @@ export default function AdminClient() {
   const [quota, setQuota] = useState<QuotaView | null>(null);
 
   const [masterOpen, setMasterOpen] = useState(false);
+  const [masterUnlockPw, setMasterUnlockPw] = useState("");
+  const [masterUnlockError, setMasterUnlockError] = useState("");
+  const [masterUnlocking, setMasterUnlocking] = useState(false);
   const [masterPw, setMasterPw] = useState("");
   const [dailyLimit, setDailyLimit] = useState("0");
   const [totalLimit, setTotalLimit] = useState("0");
@@ -170,18 +173,41 @@ export default function AdminClient() {
   }
 
   async function openMaster() {
+    setMasterOpen(true);
+    setMasterUnlockPw("");
+    setMasterUnlockError("");
     setMasterMsg("");
     setMasterPw("");
-    const res = await fetch("/api/admin/settings");
-    if (res.ok) {
+  }
+
+  async function verifyAndOpenMaster() {
+    setMasterUnlocking(true);
+    setMasterUnlockError("");
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify-master",
+          masterPassword: masterUnlockPw,
+        }),
+      });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "마스터 비밀번호 확인 실패");
       if (data.settings) {
         setQuota(data.settings);
         setDailyLimit(String(data.settings.dailyLimit ?? 0));
         setTotalLimit(String(data.settings.totalLimit ?? 0));
       }
+      setMasterPw(masterUnlockPw);
+      setMasterUnlockPw("");
+    } catch (err) {
+      setMasterUnlockError(
+        err instanceof Error ? err.message : "마스터 비밀번호 확인 실패"
+      );
+    } finally {
+      setMasterUnlocking(false);
     }
-    setMasterOpen(true);
   }
 
   async function saveMaster(e: FormEvent) {
@@ -342,42 +368,70 @@ export default function AdminClient() {
             관리자 페이지 1건 발행에만 적용됩니다. 로컬 대량등록(tools/webdoc)은 예외입니다. 0 =
             무제한.
           </p>
-          <label className="mt-4 block text-sm">
-            마스터 비밀번호
-            <input
-              type="password"
-              className="mt-1 w-full border border-[var(--line)] bg-white rounded-xl px-3 py-2"
-              value={masterPw}
-              onChange={(e) => setMasterPw(e.target.value)}
-              required
-            />
-          </label>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm">
-              하루 발행수량
-              <input
-                type="number"
-                min={0}
-                className="mt-1 w-full border border-[var(--line)] bg-white rounded-xl px-3 py-2"
-                value={dailyLimit}
-                onChange={(e) => setDailyLimit(e.target.value)}
-              />
-            </label>
-            <label className="block text-sm">
-              전체발행수량
-              <input
-                type="number"
-                min={0}
-                className="mt-1 w-full border border-[var(--line)] bg-white rounded-xl px-3 py-2"
-                value={totalLimit}
-                onChange={(e) => setTotalLimit(e.target.value)}
-              />
-            </label>
-          </div>
-          {masterMsg && <p className="mt-3 text-sm text-[var(--ink-soft)]">{masterMsg}</p>}
-          <button type="submit" className="btn-gold mt-5" disabled={masterSaving}>
-            {masterSaving ? "저장 중…" : "설정 저장"}
-          </button>
+          {!masterPw ? (
+            <div className="mt-4 rounded-2xl border border-[var(--line)] bg-white p-4">
+              <label className="block text-sm">
+                마스터 비밀번호
+                <input
+                  type="password"
+                  className="mt-1 w-full border border-[var(--line)] bg-white rounded-xl px-3 py-2"
+                  value={masterUnlockPw}
+                  onChange={(e) => setMasterUnlockPw(e.target.value)}
+                  required
+                />
+              </label>
+              {masterUnlockError && (
+                <p className="mt-3 text-sm text-red-700">{masterUnlockError}</p>
+              )}
+              <button
+                type="button"
+                className="btn-gold mt-4"
+                disabled={masterUnlocking}
+                onClick={verifyAndOpenMaster}
+              >
+                {masterUnlocking ? "확인 중…" : "비밀번호 확인"}
+              </button>
+            </div>
+          ) : (
+            <>
+              <label className="mt-4 block text-sm">
+                마스터 비밀번호
+                <input
+                  type="password"
+                  className="mt-1 w-full border border-[var(--line)] bg-white rounded-xl px-3 py-2"
+                  value={masterPw}
+                  onChange={(e) => setMasterPw(e.target.value)}
+                  required
+                />
+              </label>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm">
+                  하루 발행수량
+                  <input
+                    type="number"
+                    min={0}
+                    className="mt-1 w-full border border-[var(--line)] bg-white rounded-xl px-3 py-2"
+                    value={dailyLimit}
+                    onChange={(e) => setDailyLimit(e.target.value)}
+                  />
+                </label>
+                <label className="block text-sm">
+                  전체발행수량
+                  <input
+                    type="number"
+                    min={0}
+                    className="mt-1 w-full border border-[var(--line)] bg-white rounded-xl px-3 py-2"
+                    value={totalLimit}
+                    onChange={(e) => setTotalLimit(e.target.value)}
+                  />
+                </label>
+              </div>
+              {masterMsg && <p className="mt-3 text-sm text-[var(--ink-soft)]">{masterMsg}</p>}
+              <button type="submit" className="btn-gold mt-5" disabled={masterSaving}>
+                {masterSaving ? "저장 중…" : "설정 저장"}
+              </button>
+            </>
+          )}
         </form>
       )}
 
