@@ -4,6 +4,7 @@ import { listPages, pagePath } from "@/lib/seo-pages";
 import { SITE } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "강아지 파양·분양 안내글",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE.siteUrl}/guide` },
 };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 20;
 
 type Props = { searchParams: Promise<{ page?: string }> };
 
@@ -30,7 +31,7 @@ export default async function GuideIndexPage({ searchParams }: Props) {
       <p className="eyebrow">Archive</p>
       <h1 className="section-title">강아지 파양·분양 안내글</h1>
       <p className="section-lead">
-        총 {total}건 · {SITE.brand} 전국 파양입소·무료분양 가이드
+        총 {total}건 · 페이지당 {PAGE_SIZE}개 · {SITE.brand} 전국 파양입소·무료분양 가이드
       </p>
 
       <ul className="mt-10 divide-y divide-[var(--line)] border border-[var(--line)] bg-[var(--ivory)] rounded-2xl">
@@ -61,21 +62,40 @@ export default async function GuideIndexPage({ searchParams }: Props) {
         })}
       </ul>
 
-      {totalPages >= 1 && (
-        <nav className="mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="페이지">
+      {totalPages > 1 && (
+        <nav
+          className="mt-10 mb-8 flex flex-wrap items-center justify-center gap-2 pb-8"
+          aria-label="페이지"
+        >
+          {current > 1 && (
+            <Link
+              href={current - 1 === 1 ? "/guide" : `/guide?page=${current - 1}`}
+              className="min-w-10 rounded-full border border-[var(--line)] bg-white px-3 py-2 text-center text-sm font-semibold text-[var(--ink)]"
+            >
+              이전
+            </Link>
+          )}
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
             <Link
               key={n}
               href={n === 1 ? "/guide" : `/guide?page=${n}`}
-              className={`min-w-9 rounded-full px-2 py-1 text-center text-sm ${
+              className={`min-w-10 rounded-full px-3 py-2 text-center text-sm font-semibold ${
                 n === current
-                  ? "bg-[var(--bronze)] text-white"
-                  : "border border-[var(--line)] bg-white rounded-xl text-[var(--ink)]"
+                  ? "bg-[var(--color,#1a2f55)] text-white"
+                  : "border border-[var(--line)] bg-white text-[var(--ink)]"
               }`}
             >
               {n}
             </Link>
           ))}
+          {current < totalPages && (
+            <Link
+              href={`/guide?page=${current + 1}`}
+              className="min-w-10 rounded-full border border-[var(--line)] bg-white px-3 py-2 text-center text-sm font-semibold text-[var(--ink)]"
+            >
+              다음
+            </Link>
+          )}
         </nav>
       )}
     </div>

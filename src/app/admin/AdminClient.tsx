@@ -3,7 +3,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 20;
 const GEMINI_LS_KEY = "dalbit-admin-gemini-key";
 
 type PageItem = {
@@ -538,21 +538,39 @@ export default function AdminClient() {
             );
           })}
         </ul>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <div className="mt-6 mb-8 flex flex-wrap items-center justify-center gap-2 pb-6">
+          {page > 1 && (
+            <button
+              type="button"
+              onClick={() => loadPages(page - 1)}
+              className="min-w-10 rounded-full border border-[var(--line)] bg-white px-3 py-2 text-sm font-semibold"
+            >
+              이전
+            </button>
+          )}
           {Array.from({ length: Math.max(1, totalPages) }, (_, i) => i + 1).map((n) => (
             <button
               key={n}
               type="button"
               onClick={() => loadPages(n)}
-              className={`min-w-9 rounded-full px-2 py-1 text-sm ${
+              className={`min-w-10 rounded-full px-3 py-2 text-sm font-semibold ${
                 n === page
-                  ? "bg-[var(--bronze)] text-white"
-                  : "border border-[var(--line)] bg-white rounded-xl"
+                  ? "bg-[var(--color,#1a2f55)] text-white"
+                  : "border border-[var(--line)] bg-white"
               }`}
             >
               {n}
             </button>
           ))}
+          {page < totalPages && (
+            <button
+              type="button"
+              onClick={() => loadPages(page + 1)}
+              className="min-w-10 rounded-full border border-[var(--line)] bg-white px-3 py-2 text-sm font-semibold"
+            >
+              다음
+            </button>
+          )}
         </div>
       </div>
     </div>

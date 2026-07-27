@@ -224,6 +224,18 @@ def start_run(body: RunBody) -> dict[str, Any]:
             idx_msg = " | ".join(idx_msgs) if idx_msgs else ""
             blob_msg = " | ".join(blob_msgs) if blob_msgs else ""
 
+            # 배치 누락 방지: 전체 public/seo-data/pages 를 한 번 더 Blob에 동기화
+            final_pages = os.path.join(sync, "pages")
+            if os.path.isdir(final_pages):
+                final_ok, final_msg = sync_pages_dir_to_blob(final_pages)
+                _append_log(f"최종 웹 동기화: {final_msg}")
+                blob_ok = blob_ok and final_ok
+                if not final_ok and not warning_msg:
+                    warning_msg = (
+                        "최종 Blob 동기화 실패. BLOB_READ_WRITE_TOKEN 을 확인하세요."
+                    )
+                blob_msg = f"{blob_msg} | 최종:{final_msg}" if blob_msg else final_msg
+
             with _job_lock:
                 _job["result"] = {
                     "urls": all_urls,

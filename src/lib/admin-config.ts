@@ -2,5 +2,5 @@
 export const ADMIN = {
   username: "infocs",
   password: "infocs070207",
-  pageSize: 25,
+  pageSize: 20,
 } as const;
