@@ -1,0 +1,29 @@
+# 네이버 사이트맵·RSS 제출 안내 (화이트파크)
+
+## 제출 URL (배포 도메인 기준)
+
+- 사이트맵: `https://실제도메인/sitemap.xml`
+- RSS: `https://실제도메인/rss.xml`
+- IndexNow 키 파일: `https://실제도메인/a8f3c2e1b9d0476e5a1c8f2d0b7e94a6.txt`
+
+Vercel Environment Variable `NEXT_PUBLIC_SITE_URL` 을 https://whitepark.puppytimes.co.kr 로 맞추세요.
+
+## 네이버 서치어드바이저 제출 방법
+
+1. [네이버 서치어드바이저](https://searchadvisor.naver.com/) 로그인
+2. 웹마스터 도구 → 사이트 등록 (소유확인: 이미 head에 naver-site-verification 메타 적용됨)
+3. **요청 → 사이트맵 제출**  
+   - `https://실제도메인/sitemap.xml` 입력 후 제출
+4. **요청 → RSS 제출** (메뉴명이 ‘수집 요청 / RSS’ 인 경우 있음)  
+   - `https://실제도메인/rss.xml` 또는 `https://실제도메인/feed`  
+   - 중요: 네이버에 등록한 사이트 주소(http/https, www 유무)와 **완전히 같은 도메인**으로 제출  
+   - RSS 안 item이 1개 이상이어야 함 (글 발행 후 제출 권장)
+5. 발행할 때마다 사이트맵·RSS는 자동으로 최신 글이 반영됩니다 (동적 생성).
+6. 관리자/로컬 발행 시 **IndexNow** 도 자동 전송됩니다 (Bing· assorted engines). 네이버는 사이트맵·RSS가 주 경로입니다.
+
+## 로컬 대량 발행
+
+1. `tools/webdoc/run.bat` 실행 (또는 `build_exe.bat` 로 exe 생성)
+2. 키워드 입력 → 사이트 URL(배포 도메인) 확인
+3. `public/seo-data 동기화` + `IndexNow 즉시 전송` 체크
+4. 실행 후 git push / Vercel 재배포하면 사이트맵·RSS에 반영

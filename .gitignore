@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.env
+.env.local
+*.log
+.DS_Store
+tools/webdoc/__pycache__/
+tools/webdoc/webdoc_*/
+tools/webdoc/build/
+tools/webdoc/dist/
+tools/webdoc/output/
+dist/
+*.tsbuildinfo
