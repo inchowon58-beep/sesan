@@ -27,6 +27,7 @@
       out_dir: $("outDir").value.trim(),
       last_keywords: $("keywords").value,
       count: $("count").value.trim(),
+      chunk_size: $("chunkSize").value.trim() || "40",
       do_indexnow: $("doIndexnow").checked,
       image_url: $("imageUrl").value.trim(),
       image_count: $("imageCount").value.trim(),
@@ -40,6 +41,8 @@
     if (s.out_dir) $("outDir").value = s.out_dir;
     if (s.last_keywords) $("keywords").value = s.last_keywords;
     if (s.count != null) $("count").value = s.count;
+    if (s.chunk_size != null && s.chunk_size !== "") $("chunkSize").value = s.chunk_size;
+    else if (!$("chunkSize").value) $("chunkSize").value = "40";
     if (typeof s.do_indexnow === "boolean") $("doIndexnow").checked = s.do_indexnow;
     if (s.image_url) $("imageUrl").value = s.image_url;
     if (s.image_count != null && s.image_count !== "") $("imageCount").value = s.image_count;
@@ -129,6 +132,7 @@
       out_dir: $("outDir").value.trim(),
       do_indexnow: $("doIndexnow").checked,
       count: Number($("count").value) || null,
+      chunk_size: Math.min(100, Math.max(1, Number($("chunkSize").value) || 40)),
       image_url: $("imageUrl").value.trim(),
       image_base: $("imageUrl").value.trim(),
       image_count: Number($("imageCount").value) || null,

@@ -24,7 +24,7 @@ export type IndexNowResult = {
   submitted: number;
 };
 
-/** 글 URL만 제출 (사이트맵 등 부가 URL은 건수에 섞지 않음) */
+/** 글 URL만 제출 (사이트맵 등 부가 URL은 건수에 섞지 않음). 기본 40건씩 전송. */
 export async function submitIndexNow(urls: string[]): Promise<IndexNowResult> {
   const unique = [
     ...new Set(urls.map((u) => u.trim()).filter(Boolean)),
@@ -34,39 +34,57 @@ export async function submitIndexNow(urls: string[]): Promise<IndexNowResult> {
   }
 
   const host = siteHost();
-  const payload = {
-    host,
-    key: INDEXNOW_KEY,
-    keyLocation: indexNowKeyLocation(),
-    urlList: unique,
-  };
+  const keyLocation = indexNowKeyLocation();
+  const chunkSize = 40;
+  let submitted = 0;
+  let lastError = "";
 
-  try {
-    const res = await fetch(ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 200 || res.status === 202) {
-      return {
-        ok: true,
-        message: `IndexNow 성공 · 글 ${unique.length}건`,
-        submitted: unique.length,
-      };
-    }
-    const text = await res.text().catch(() => "");
-    return {
-      ok: false,
-      message: `IndexNow 실패 HTTP ${res.status}: ${text.slice(0, 200)}`,
-      submitted: 0,
+  for (let i = 0; i < unique.length; i += chunkSize) {
+    const chunk = unique.slice(i, i + chunkSize);
+    const payload = {
+      host,
+      key: INDEXNOW_KEY,
+      keyLocation,
+      urlList: chunk,
     };
-  } catch (e) {
+
+    try {
+      const res = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify(payload),
+      });
+      if (res.status === 200 || res.status === 202) {
+        submitted += chunk.length;
+      } else {
+        const text = await res.text().catch(() => "");
+        lastError = `HTTP ${res.status}: ${text.slice(0, 200)}`;
+      }
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  if (submitted === unique.length) {
+    const batches = Math.ceil(unique.length / chunkSize);
     return {
-      ok: false,
-      message: `IndexNow 오류: ${e instanceof Error ? e.message : e}`,
-      submitted: 0,
+      ok: true,
+      message: `IndexNow 성공 · 글 ${unique.length}건 · ${batches}회(${chunkSize}건씩)`,
+      submitted,
     };
   }
+  if (submitted > 0) {
+    return {
+      ok: false,
+      message: `IndexNow 부분성공 ${submitted}/${unique.length}건${lastError ? ` · ${lastError}` : ""}`,
+      submitted,
+    };
+  }
+  return {
+    ok: false,
+    message: `IndexNow 실패${lastError ? `: ${lastError}` : ""}`,
+    submitted: 0,
+  };
 }
 
 export function absoluteGuideUrl(slug: string): string {

@@ -17,7 +17,7 @@ from pydantic import BaseModel
 
 from blob_sync import sync_pages_dir_to_blob
 from content import DEFAULT_SITE_URL, generate_batch
-from indexnow import submit_indexnow
+from indexnow import DEFAULT_CHUNK, normalize_chunk_size, submit_indexnow
 from project_paths import project_root, webdoc_dir
 
 
@@ -84,6 +84,7 @@ class RunBody(BaseModel):
     out_dir: str = ""
     do_indexnow: bool = True
     count: Optional[int] = None
+    chunk_size: Optional[int] = None
     image_url: str = ""
     image_base: str = ""
     image_count: Optional[int] = None
@@ -96,6 +97,7 @@ class SettingsBody(BaseModel):
     image_url: str = ""
     image_base: str = ""
     image_count: Optional[int] = None
+    chunk_size: Optional[int] = None
 
 
 @app.get("/")
@@ -114,6 +116,7 @@ def meta() -> dict[str, Any]:
             "image_url": "https://image.cattery.co.kr/dogboho",
             "image_base": "https://image.cattery.co.kr/dogboho",
             "image_count": 79,
+            "chunk_size": DEFAULT_CHUNK,
         }
     }
 
@@ -166,56 +169,76 @@ def start_run(body: RunBody) -> dict[str, Any]:
             image_url = (body.image_url or "").strip()
             image_base = (body.image_base or "").strip()
             image_count = body.image_count if body.image_count and body.image_count > 0 else None
+            chunk_size = normalize_chunk_size(body.chunk_size)
 
-            _append_log(f"발행 시작 · {len(kws)}건")
+            _append_log(f"발행 시작 · {len(kws)}건 · 한 번 발행 {chunk_size}건")
             _append_log(f"사이트: {site}")
             _append_log(
                 f"이미지: {image_url or image_base or '기본 CDN'} "
                 f"(count={image_count or '자동'})"
             )
-            urls = generate_batch(
-                kws,
-                folder,
-                site,
-                sync,
-                image_url=image_url,
-                image_base=image_base,
-                image_count=image_count,
-            )
-            _append_log(f"로컬 저장: {folder}")
-            _append_log(f"seo-data 동기화: {sync}")
 
-            blob_ok, blob_msg = sync_pages_dir_to_blob(os.path.join(folder, "pages"))
-            _append_log(f"웹(Blob): {blob_msg}")
-
-            idx_msg = ""
+            all_urls: List[str] = []
+            blob_ok = True
+            blob_msgs: List[str] = []
+            idx_msgs: List[str] = []
             warning_msg = ""
-            if not blob_ok:
-                warning_msg = (
-                    "웹 반영 실패: Blob 업로드가 안 되어 운영 사이트에는 아직 보이지 않습니다. "
-                    "BLOB_READ_WRITE_TOKEN 또는 프로젝트 경로를 확인하세요."
-                )
-                _append_log(f"경고: {warning_msg}")
+            total_batches = (len(kws) + chunk_size - 1) // chunk_size
 
-            if body.do_indexnow:
-                if blob_ok:
-                    _ok, idx_msg = submit_indexnow(site, urls)
-                    _append_log(f"IndexNow: {idx_msg}")
-                else:
-                    idx_msg = "웹 반영 전이라 IndexNow 전송을 건너뜁니다."
-                    _append_log(f"IndexNow: {idx_msg}")
+            for bi, start in enumerate(range(0, len(kws), chunk_size), 1):
+                batch = kws[start : start + chunk_size]
+                _append_log(f"배치 {bi}/{total_batches} · {len(batch)}건 생성")
+                batch_folder = os.path.join(folder, f"batch_{bi:02d}")
+                urls = generate_batch(
+                    batch,
+                    batch_folder,
+                    site,
+                    sync,
+                    image_url=image_url,
+                    image_base=image_base,
+                    image_count=image_count,
+                )
+                all_urls.extend(urls)
+                _append_log(f"  로컬 저장: {batch_folder}")
+
+                ok, blob_msg = sync_pages_dir_to_blob(os.path.join(batch_folder, "pages"))
+                blob_msgs.append(blob_msg)
+                _append_log(f"  웹(Blob): {blob_msg}")
+                if not ok:
+                    blob_ok = False
+                    warning_msg = (
+                        "웹 반영 실패: Blob 업로드가 안 되어 운영 사이트에는 아직 보이지 않습니다. "
+                        "BLOB_READ_WRITE_TOKEN 또는 프로젝트 경로를 확인하세요."
+                    )
+                    _append_log(f"  경고: {warning_msg}")
+                    if body.do_indexnow:
+                        idx_msgs.append("웹 반영 전이라 IndexNow 전송을 건너뜁니다.")
+                        _append_log("  IndexNow: 웹 반영 전이라 건너뜀")
+                    continue
+
+                if body.do_indexnow:
+                    _ok, idx_msg = submit_indexnow(site, urls, chunk_size=chunk_size)
+                    idx_msgs.append(idx_msg)
+                    _append_log(f"  IndexNow: {idx_msg}")
+
+            idx_msg = " | ".join(idx_msgs) if idx_msgs else ""
+            blob_msg = " | ".join(blob_msgs) if blob_msgs else ""
 
             with _job_lock:
                 _job["result"] = {
-                    "urls": urls,
+                    "urls": all_urls,
                     "folder": folder,
                     "blob_ok": blob_ok,
                     "blob_msg": blob_msg,
                     "indexnow": idx_msg,
-                    "count": len(urls),
+                    "count": len(all_urls),
+                    "chunk_size": chunk_size,
+                    "batches": total_batches,
                 }
                 _job["error"] = warning_msg or None
-            _append_log(f"완료 · {len(urls)}건")
+            _append_log(
+                f"완료 · {len(all_urls)}건 · {total_batches}배치({chunk_size}건씩)"
+            )
         except Exception as exc:
             _append_log(f"오류: {exc}")
             with _job_lock:

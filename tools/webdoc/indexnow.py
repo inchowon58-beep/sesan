@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""IndexNow 제출 — 달빛쉘터 로컬/서버 공통 키."""
+"""IndexNow 제출 — 달빛쉘터 로컬/서버 공통 키.
+
+유아독존/기본 SEO와 같이 기본 40건 단위로 나눠 전송한다.
+"""
 
 from __future__ import annotations
 
@@ -16,6 +19,9 @@ except ImportError:  # pragma: no cover
 INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow"
 DEFAULT_KEY = "f4e8fb3912a5d6f628c4255cc466f799"
 DEFAULT_HOST = "sesan.agapet.co.kr"
+# 유아독존 SEO와 동일 — 한 번 요청당 URL 수
+DEFAULT_CHUNK = 40
+MAX_CHUNK = 100
 
 
 def get_indexnow_key() -> str:
@@ -34,13 +40,24 @@ def host_from_url(url: str) -> str:
     return p.netloc or DEFAULT_HOST
 
 
+def normalize_chunk_size(value: Optional[int]) -> int:
+    try:
+        n = int(value or 0)
+    except (TypeError, ValueError):
+        n = 0
+    if n < 1:
+        n = DEFAULT_CHUNK
+    return min(MAX_CHUNK, max(1, n))
+
+
 def submit_indexnow(
     site_url: str,
     urls: Iterable[str],
     key: Optional[str] = None,
     timeout: int = 30,
+    chunk_size: Optional[int] = None,
 ) -> Tuple[bool, str]:
-    """글 URL만 제출. 건수 = 실제 글 수 (사이트맵 등 부가 URL 제외)."""
+    """글 URL만 제출. 기본 40건씩 나눠 IndexNow 전송."""
     if requests is None:
         return False, "requests 패키지가 필요합니다. pip install requests"
 
@@ -57,21 +74,41 @@ def submit_indexnow(
     if not url_list:
         return False, "제출할 URL이 없습니다."
 
-    payload = {
-        "host": host,
-        "key": key,
-        "keyLocation": f"{base}/{key}.txt",
-        "urlList": url_list,
-    }
-    try:
-        resp = requests.post(
-            INDEXNOW_ENDPOINT,
-            headers={"Content-Type": "application/json; charset=utf-8"},
-            data=json.dumps(payload),
-            timeout=timeout,
+    size = normalize_chunk_size(chunk_size)
+    ok_chunks = 0
+    fail_msgs: List[str] = []
+    total_chunks = (len(url_list) + size - 1) // size
+
+    for i in range(0, len(url_list), size):
+        chunk = url_list[i : i + size]
+        payload = {
+            "host": host,
+            "key": key,
+            "keyLocation": f"{base}/{key}.txt",
+            "urlList": chunk,
+        }
+        try:
+            resp = requests.post(
+                INDEXNOW_ENDPOINT,
+                headers={"Content-Type": "application/json; charset=utf-8"},
+                data=json.dumps(payload),
+                timeout=timeout,
+            )
+            if resp.status_code in (200, 202):
+                ok_chunks += 1
+            else:
+                fail_msgs.append(
+                    f"chunk{i // size + 1} HTTP {resp.status_code}: {resp.text[:120]}"
+                )
+        except Exception as exc:
+            fail_msgs.append(f"chunk{i // size + 1} 오류: {exc}")
+
+    if ok_chunks == total_chunks:
+        return True, f"IndexNow 성공 · 글 {len(url_list)}건 · {total_chunks}회({size}건씩)"
+    if ok_chunks > 0:
+        return (
+            False,
+            f"IndexNow 부분성공 {ok_chunks}/{total_chunks}회 · 글 {len(url_list)}건 · "
+            + "; ".join(fail_msgs[:2]),
         )
-        if resp.status_code in (200, 202):
-            return True, f"IndexNow 성공 · 글 {len(url_list)}건"
-        return False, f"IndexNow 실패 HTTP {resp.status_code}: {resp.text[:300]}"
-    except Exception as exc:
-        return False, f"IndexNow 요청 오류: {exc}"
+    return False, f"IndexNow 실패 · " + ("; ".join(fail_msgs[:3]) or "알 수 없는 오류")
