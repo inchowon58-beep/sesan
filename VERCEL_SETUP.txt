@@ -1,4 +1,4 @@
-# 달빛쉘터 — Vercel 배포 체크리스트 (사용자가 콘솔에서 할 일)
+﻿# 달빛쉘터 — Vercel 배포 체크리스트 (사용자가 콘솔에서 할 일)
 
 ## 1) GitHub 연동
 - Vercel → Add New Project → GitHub `inchowon58-beep/sesan` Import
@@ -17,7 +17,7 @@
 
 | 키 | 값 | 비고 |
 |---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | `https://실제도메인` | 끝 `/` 없이. 예: https://dalbitshelter.puppytimes.co.kr |
+| `NEXT_PUBLIC_SITE_URL` | `https://실제도메인` | 끝 `/` 없이. 예: https://sesan.agapet.co.kr |
 | `ADMIN_JWT_SECRET` | 긴 랜덤 문자열 | 로컬 `.env.local` 과 맞춰도 됨 |
 | `INDEXNOW_KEY` | `f4e8fb3912a5d6f628c4255cc466f799` | public 폴더 txt 와 동일 (이미 코드에 포함) |
 | `BLOB_READ_WRITE_TOKEN` | Blob 연결 시 자동 | `vercel_blob_rw_...` |
@@ -39,3 +39,4 @@
 - IndexNow 키 파일 `public/f4e8fb3912a5d6f628c4255cc466f799.txt`
 - GitHub `sesan` 푸시
 - 로컬 대량생성 EXE 빌드 스크립트 `tools/webdoc/build_exe.bat`
+

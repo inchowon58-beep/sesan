@@ -15,7 +15,7 @@ except ImportError:  # pragma: no cover
 
 INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow"
 DEFAULT_KEY = "f4e8fb3912a5d6f628c4255cc466f799"
-DEFAULT_HOST = "dalbitshelter.puppytimes.co.kr"
+DEFAULT_HOST = "sesan.agapet.co.kr"
 
 
 def get_indexnow_key() -> str:

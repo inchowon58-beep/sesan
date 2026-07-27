@@ -84,12 +84,18 @@ class RunBody(BaseModel):
     out_dir: str = ""
     do_indexnow: bool = True
     count: Optional[int] = None
+    image_url: str = ""
+    image_base: str = ""
+    image_count: Optional[int] = None
 
 
 class SettingsBody(BaseModel):
     site_url: str = ""
     out_dir: str = ""
     last_keywords: str = ""
+    image_url: str = ""
+    image_base: str = ""
+    image_count: Optional[int] = None
 
 
 @app.get("/")
@@ -105,6 +111,9 @@ def meta() -> dict[str, Any]:
             "site_url": _load_default_site_url(),
             "out_dir": default_out,
             "last_keywords": "강아지파양\n무료분양\n강아지보호소\n파양입소\n강아지입양",
+            "image_url": "https://image.cattery.co.kr/dogboho",
+            "image_base": "https://image.cattery.co.kr/dogboho",
+            "image_count": 79,
         }
     }
 
@@ -154,10 +163,25 @@ def start_run(body: RunBody) -> dict[str, Any]:
             folder = os.path.join(out_base, f"webdoc_dalbit_{stamp}")
             root = project_root()
             sync = os.path.join(root, "public", "seo-data")
+            image_url = (body.image_url or "").strip()
+            image_base = (body.image_base or "").strip()
+            image_count = body.image_count if body.image_count and body.image_count > 0 else None
 
             _append_log(f"발행 시작 · {len(kws)}건")
             _append_log(f"사이트: {site}")
-            urls = generate_batch(kws, folder, site, sync)
+            _append_log(
+                f"이미지: {image_url or image_base or '기본 CDN'} "
+                f"(count={image_count or '자동'})"
+            )
+            urls = generate_batch(
+                kws,
+                folder,
+                site,
+                sync,
+                image_url=image_url,
+                image_base=image_base,
+                image_count=image_count,
+            )
             _append_log(f"로컬 저장: {folder}")
             _append_log(f"seo-data 동기화: {sync}")
 

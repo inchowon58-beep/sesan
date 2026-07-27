@@ -14,11 +14,13 @@ import random
 import re
 import string
 from datetime import datetime
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import quote
 
+from cdn_images import pick_images as cdn_pick_images
+
 BRAND = "달빛쉘터"
-DEFAULT_SITE_URL = "https://dalbitshelter.puppytimes.co.kr"
+DEFAULT_SITE_URL = "https://sesan.agapet.co.kr"
 BRAND_EN = "Dalbit Shelter"
 SITE_NAME = "달빛쉘터"
 PHONE = "010-9906-4068"
@@ -51,11 +53,22 @@ def _shuffled(rng: random.Random, items: List[Any]) -> List[Any]:
     return out
 
 
-def image_urls(count: int, seed: int) -> List[str]:
-    rng = random.Random(seed)
-    pool = [f"{IMAGE_BASE}/{i:02d}.webp" for i in range(1, IMAGE_COUNT + 1)]
-    rng.shuffle(pool)
-    return pool[:count]
+def image_urls(
+    count: int,
+    seed: int,
+    image_url: str = "",
+    image_base: str = "",
+    image_count: Optional[int] = None,
+) -> List[str]:
+    return cdn_pick_images(
+        count=count,
+        seed=seed,
+        image_url=image_url,
+        image_base=image_base or IMAGE_BASE,
+        image_count=image_count,
+        default_base=IMAGE_BASE,
+        default_count=IMAGE_COUNT,
+    )
 
 
 def slugify(keyword: str, idx: int) -> str:
@@ -358,7 +371,13 @@ def _fill(template: str, kw: str, brand: str, phone: str) -> str:
     return out.format(kw=kw, brand=brand, phone=phone)
 
 
-def build_content(keyword: str, idx: int) -> Dict[str, Any]:
+def build_content(
+    keyword: str,
+    idx: int,
+    image_url: str = "",
+    image_base: str = "",
+    image_count: Optional[int] = None,
+) -> Dict[str, Any]:
     kw = keyword.strip() or "강아지파양"
     brand = BRAND
     phone = PHONE
@@ -539,7 +558,13 @@ def build_content(keyword: str, idx: int) -> Dict[str, Any]:
         "processSteps": process_steps,
         "relatedIntents": related_intents,
         "faqs": faqs,
-        "images": image_urls(6, _seed_int(kw, idx, "img")),
+        "images": image_urls(
+            6,
+            _seed_int(kw, idx, "img"),
+            image_url=image_url,
+            image_base=image_base,
+            image_count=image_count,
+        ),
         "ctaText": cta_text,
         "createdAt": now,
         "updatedAt": now,
@@ -629,7 +654,13 @@ def write_html(page: Dict[str, Any], site_url: str) -> str:
 
 
 def generate_batch(
-    keywords: List[str], out_dir: str, site_url: str, sync_public: str = ""
+    keywords: List[str],
+    out_dir: str,
+    site_url: str,
+    sync_public: str = "",
+    image_url: str = "",
+    image_base: str = "",
+    image_count: Optional[int] = None,
 ) -> List[str]:
     import json
     import os
@@ -640,7 +671,13 @@ def generate_batch(
     slugs: List[str] = []
     urls: List[str] = []
     for i, kw in enumerate(keywords, 1):
-        page = build_content(kw, i)
+        page = build_content(
+            kw,
+            i,
+            image_url=image_url,
+            image_base=image_base,
+            image_count=image_count,
+        )
         slugs.append(page["slug"])
         with open(os.path.join(pages_dir, f"{page['slug']}.json"), "w", encoding="utf-8") as f:
             json.dump(page, f, ensure_ascii=False, indent=2)

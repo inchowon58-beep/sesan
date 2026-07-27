@@ -35,7 +35,7 @@ export const SITE = {
   areaServed: "대한민국 전국",
   /** 배포 도메인 — 실제 도메인 연결 시 수정 */
   siteUrl:
-    process.env.NEXT_PUBLIC_SITE_URL || "https://dalbitshelter.puppytimes.co.kr",
+    process.env.NEXT_PUBLIC_SITE_URL || "https://sesan.agapet.co.kr",
 } as const;
 
 export const CTA_LABEL = "파양·입양 상담";

@@ -53,7 +53,7 @@ export default function AdminClient() {
 
   function absolutePageUrl(path: string) {
     const base = (
-      process.env.NEXT_PUBLIC_SITE_URL || "https://dalbitshelter.puppytimes.co.kr"
+      process.env.NEXT_PUBLIC_SITE_URL || "https://sesan.agapet.co.kr"
     ).replace(/\/$/, "");
     if (!path) return `${base}/guide`;
     if (path.startsWith("http")) return path;

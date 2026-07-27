@@ -16,6 +16,7 @@ if exist dist rmdir /s /q dist
 echo [3/3] 실행파일 빌드 중 (브라우저 UI)...
 python -m PyInstaller --noconfirm --clean --windowed --name "달빛쉘터웹문서생성기" ^
   --add-data "static;static" ^
+  --add-data "cdn_images.py;." ^
   --add-data "content.py;." ^
   --add-data "web_app.py;." ^
   --add-data "indexnow.py;." ^
@@ -26,6 +27,7 @@ python -m PyInstaller --noconfirm --clean --windowed --name "달빛쉘터웹문�
   --hidden-import "project_paths" ^
   --hidden-import "indexnow" ^
   --hidden-import "content" ^
+  --hidden-import "cdn_images" ^
   --hidden-import "web_app" ^
   --hidden-import "uvicorn.logging" ^
   --hidden-import "uvicorn.loops" ^

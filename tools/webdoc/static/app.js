@@ -28,6 +28,8 @@
       last_keywords: $("keywords").value,
       count: $("count").value.trim(),
       do_indexnow: $("doIndexnow").checked,
+      image_url: $("imageUrl").value.trim(),
+      image_count: $("imageCount").value.trim(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setBadge("설정 저장됨", null);
@@ -39,6 +41,8 @@
     if (s.last_keywords) $("keywords").value = s.last_keywords;
     if (s.count != null) $("count").value = s.count;
     if (typeof s.do_indexnow === "boolean") $("doIndexnow").checked = s.do_indexnow;
+    if (s.image_url) $("imageUrl").value = s.image_url;
+    if (s.image_count != null && s.image_count !== "") $("imageCount").value = s.image_count;
   }
 
   async function copyText(text) {
@@ -125,6 +129,9 @@
       out_dir: $("outDir").value.trim(),
       do_indexnow: $("doIndexnow").checked,
       count: Number($("count").value) || null,
+      image_url: $("imageUrl").value.trim(),
+      image_base: $("imageUrl").value.trim(),
+      image_count: Number($("imageCount").value) || null,
     };
     const res = await fetch("/api/run", {
       method: "POST",
