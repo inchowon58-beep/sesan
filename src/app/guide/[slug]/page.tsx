@@ -23,8 +23,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const slug = decodeURIComponent(raw);
   const page = await readPage(slug);
   if (!page) return { title: "페이지 없음" };
-  const url = `${SITE.siteUrl.replace(/\/$/, "")}/guide/${encodeURIComponent(page.slug)}`;
-  const ogImage = page.images[0] || SITE.logo;
+  const base = SITE.siteUrl.replace(/\/$/, "");
+  const url = `${base}/guide/${encodeURIComponent(page.slug)}`;
+  const rawImage = page.images?.[0] || SITE.logo;
+  const ogImage = rawImage.startsWith("http")
+    ? rawImage
+    : `${base}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`;
   return {
     title: page.title,
     description: page.metaDescription,
@@ -34,8 +38,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: page.title,
       description: page.metaDescription,
       url,
+      siteName: SITE.name,
+      locale: "ko_KR",
       type: "article",
-      images: [{ url: ogImage, alt: galleryAlt(page.keyword, 1) }],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: galleryAlt(page.keyword, 1),
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -166,39 +179,53 @@ export default async function GuidePage({ params }: Props) {
         </section>
       )}
 
-      {/* ---------- 핵심 서비스 6가지 ---------- */}
+      {/* ---------- 핵심 서비스 6가지 (접기: details — HTML에 본문 유지로 SEO 안전) ---------- */}
       {page.services && page.services.length > 0 && (
         <section className="dalbit-section dalbit-section-alt mt-12 md:mt-16">
           <div className="dalbit-container">
-            <div className="dalbit-sec-header">
-              <span className="dalbit-badge">Service</span>
-              <h2 className="dalbit-sec-title">
-                {page.servicesTitle || `${SITE.brand}의 핵심 서비스`}
-              </h2>
-              {page.servicesIntro && (
-                <p className="dalbit-sec-desc">{page.servicesIntro}</p>
-              )}
-            </div>
+            <details className="guide-services-fold group">
+              <summary className="guide-services-summary">
+                <div className="dalbit-sec-header">
+                  <span className="dalbit-badge">Service</span>
+                  <h2 className="dalbit-sec-title">
+                    {page.servicesTitle || `${SITE.brand}의 핵심 서비스`}
+                  </h2>
+                  {page.servicesIntro && (
+                    <p className="dalbit-sec-desc">{page.servicesIntro}</p>
+                  )}
+                  <p className="guide-services-hint">
+                    클릭하여 자세히 보기
+                    <span className="guide-services-chevron" aria-hidden>
+                      ▾
+                    </span>
+                  </p>
+                </div>
+              </summary>
 
-            <div className="dalbit-card-list" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-              {page.services.map((svc, i) => (
-                <article key={svc.title + i} className="dalbit-card">
-                  <div className="dalbit-card-thumb">
-                    <Image
-                      src={images[i % Math.max(images.length, 1)] || SITE.logo}
-                      alt={svc.title}
-                      fill
-                      className="object-cover"
-                    />
-                    <span className="dalbit-card-badge">STEP {String(i + 1).padStart(2, "0")}</span>
-                  </div>
-                  <div className="dalbit-card-info">
-                    <h3>{svc.title}</h3>
-                    <p>{svc.description}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
+              <div className="guide-services-body">
+                <div className="dalbit-card-list" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+                  {page.services.map((svc, i) => (
+                    <article key={svc.title + i} className="dalbit-card">
+                      <div className="dalbit-card-thumb">
+                        <Image
+                          src={images[i % Math.max(images.length, 1)] || SITE.logo}
+                          alt={svc.title}
+                          fill
+                          className="object-cover"
+                        />
+                        <span className="dalbit-card-badge">
+                          STEP {String(i + 1).padStart(2, "0")}
+                        </span>
+                      </div>
+                      <div className="dalbit-card-info">
+                        <h3>{svc.title}</h3>
+                        <p>{svc.description}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </details>
           </div>
         </section>
       )}

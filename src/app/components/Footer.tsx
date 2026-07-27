@@ -2,6 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { SITE } from "@/lib/site";
 
+const RELATED_LINKS = [
+  { href: "https://www.yourdogzone.co.kr/", label: "유아독존" },
+  { href: "https://www.eanimal.kr/", label: "반려문화위원회" },
+] as const;
+
 export default function Footer() {
   return (
     <footer className="dalbit-footer">
@@ -21,6 +26,23 @@ export default function Footer() {
           </div>
         </div>
 
+        <div id="partners" className="dalbit-footer-partners scroll-mt-28">
+          <p className="dalbit-footer-partners-label">관련업체링크</p>
+          <div className="dalbit-footer-partners-list">
+            {RELATED_LINKS.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="dalbit-footer-partner-link"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
         <div className="dalbit-footer-info">
           <div className="dalbit-footer-info-list">
             <span>{SITE.brand}</span>
@@ -33,6 +55,7 @@ export default function Footer() {
         </div>
 
         <div className="dalbit-footer-util">
+          <a href="#partners">관련업체링크</a>
           <Link href="/admin">관리자 로그인</Link>
         </div>
       </div>

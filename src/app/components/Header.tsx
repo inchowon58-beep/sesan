@@ -10,7 +10,7 @@ const NAV = [
   { href: "/#surrender", label: "입소하기" },
   { href: "/#gallery", label: "입양하기" },
   { href: "/#guide", label: "방문안내" },
-  { href: "/#news", label: "공지사항" },
+  { href: "/#articles", label: "공지사항" },
 ] as const;
 
 function PhoneIcon() {

@@ -9,7 +9,7 @@ export default function ArticlesScroll({ pages }: { pages: SeoPage[] }) {
 
   if (!preview.length) {
     return (
-      <section id="news" className="dalbit-section dalbit-section-alt">
+      <section id="articles" className="dalbit-section dalbit-section-alt scroll-mt-28">
         <div className="dalbit-container">
           <div className="dalbit-sec-header align-left">
             <span className="dalbit-badge">Notice</span>
@@ -26,7 +26,7 @@ export default function ArticlesScroll({ pages }: { pages: SeoPage[] }) {
   }
 
   return (
-    <section id="news" className="dalbit-section dalbit-section-alt">
+    <section id="articles" className="dalbit-section dalbit-section-alt scroll-mt-28">
       <div className="dalbit-container">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="dalbit-sec-header align-left">
