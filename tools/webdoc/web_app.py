@@ -189,9 +189,21 @@ def start_run(body: RunBody) -> dict[str, Any]:
             _append_log(f"웹(Blob): {blob_msg}")
 
             idx_msg = ""
+            warning_msg = ""
+            if not blob_ok:
+                warning_msg = (
+                    "웹 반영 실패: Blob 업로드가 안 되어 운영 사이트에는 아직 보이지 않습니다. "
+                    "BLOB_READ_WRITE_TOKEN 또는 프로젝트 경로를 확인하세요."
+                )
+                _append_log(f"경고: {warning_msg}")
+
             if body.do_indexnow:
-                _ok, idx_msg = submit_indexnow(site, urls)
-                _append_log(f"IndexNow: {idx_msg}")
+                if blob_ok:
+                    _ok, idx_msg = submit_indexnow(site, urls)
+                    _append_log(f"IndexNow: {idx_msg}")
+                else:
+                    idx_msg = "웹 반영 전이라 IndexNow 전송을 건너뜁니다."
+                    _append_log(f"IndexNow: {idx_msg}")
 
             with _job_lock:
                 _job["result"] = {
@@ -202,6 +214,7 @@ def start_run(body: RunBody) -> dict[str, Any]:
                     "indexnow": idx_msg,
                     "count": len(urls),
                 }
+                _job["error"] = warning_msg or None
             _append_log(f"완료 · {len(urls)}건")
         except Exception as exc:
             _append_log(f"오류: {exc}")

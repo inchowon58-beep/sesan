@@ -606,7 +606,16 @@ body.dalbit-root .dalbit-hero-cta {
 
 @media (max-width: 640px) {
   body.dalbit-root .dalbit-hero-content {
-    padding-bottom: 46px;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding: 96px 0 24px;
+  }
+  body.dalbit-root .dalbit-hero-inner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100%;
   }
   body.dalbit-root .dalbit-hero-cta {
     height: 54px;
