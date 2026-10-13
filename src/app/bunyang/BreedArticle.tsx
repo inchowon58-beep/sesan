@@ -1,22 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { SeoPage } from "@/lib/seo-pages";
-import { galleryAlt } from "@/lib/images";
 import { faqJsonLd } from "@/lib/faq-data";
 import { SITE } from "@/lib/site";
 import { BREED_PHONE, BREED_PHONE_TEL } from "@/lib/breed-seo";
+import { breedGalleryAlt } from "@/lib/breed-images";
 import GuideHeroThumb from "@/app/components/GuideHeroThumb";
 
 type Props = {
   page: SeoPage;
   pageUrl: string;
+  listHref: "/bunyang" | "/goyang";
+  listLabel: string;
 };
 
 /** 분양 전용 상세 — 가이드 톤 유지, 연락처만 분양번호 사용 */
-export default function BreedArticle({ page, pageUrl }: Props) {
+export default function BreedArticle({ page, pageUrl, listHref, listLabel }: Props) {
   const images = page.images || [];
   const [missionSection, facilitySection, relatedSection] = page.sections || [];
   const otherSections = page.sections?.slice(3) || [];
+  const listUrl = `${SITE.siteUrl.replace(/\/$/, "")}${listHref}`;
 
   const breadcrumb = {
     "@context": "https://schema.org",
@@ -26,8 +29,8 @@ export default function BreedArticle({ page, pageUrl }: Props) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "강아지분양",
-        item: `${SITE.siteUrl.replace(/\/$/, "")}/bunyang`,
+        name: listLabel,
+        item: listUrl,
       },
       {
         "@type": "ListItem",
@@ -83,8 +86,8 @@ export default function BreedArticle({ page, pageUrl }: Props) {
             홈
           </Link>
           <span className="mx-2">/</span>
-          <Link href="/bunyang" className="hover:text-[var(--color,#1a2f55)]">
-            강아지분양
+          <Link href={listHref} className="hover:text-[var(--color,#1a2f55)]">
+            {listLabel}
           </Link>
           <span className="mx-2">/</span>
           <span>{page.keyword}</span>
@@ -115,7 +118,7 @@ export default function BreedArticle({ page, pageUrl }: Props) {
             <figure className="my-6 overflow-hidden rounded-2xl">
               <Image
                 src={images[1]}
-                alt={galleryAlt(page.keyword, 2)}
+                alt={breedGalleryAlt(page.keyword, 2, page.keyword)}
                 width={1000}
                 height={700}
                 className="w-full object-cover"
@@ -193,7 +196,7 @@ export default function BreedArticle({ page, pageUrl }: Props) {
             <figure className="my-6 overflow-hidden rounded-2xl">
               <Image
                 src={images[2]}
-                alt={galleryAlt(page.keyword, 3)}
+                alt={breedGalleryAlt(page.keyword, 3, page.keyword)}
                 width={1000}
                 height={700}
                 className="w-full object-cover"
@@ -319,7 +322,7 @@ export default function BreedArticle({ page, pageUrl }: Props) {
 
       <div className="dalbit-container max-w-3xl guide-cta-wrap">
         <aside className="dalbit-contact-cta guide-contact-box flex flex-col items-center gap-5 text-center">
-          <p className="dalbit-contact-eyebrow">Contact — 화이트테리어 분양·입양</p>
+          <p className="dalbit-contact-eyebrow">Contact — {listLabel} 상담</p>
           <p className="font-display text-xl md:text-2xl">{page.ctaText}</p>
           <a href={BREED_PHONE_TEL} className="dalbit-contact-btn">
             분양 상담 {BREED_PHONE}

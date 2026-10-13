@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SITE } from "@/lib/site";
-import { findBreedEntry, BREED_INTENTS } from "@/lib/breed-catalog";
-import { generateWhiteTerrierPage } from "@/lib/breed-seo";
+import { findBreedEntry, listBreedEntries, breedPath } from "@/lib/breed-catalog";
+import { generateBreedPage } from "@/lib/breed-seo";
 import BreedArticle from "../BreedArticle";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -10,18 +10,19 @@ type Props = { params: Promise<{ slug: string }> };
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 
-/** 전국 키워드만 프리빌드 — 지역 페이지는 요청 시 템플릿 생성 (기존 seo-data 미사용) */
 export function generateStaticParams() {
-  return BREED_INTENTS.map((intent) => ({ slug: intent }));
+  return listBreedEntries("dog")
+    .filter((e) => !e.region)
+    .map((e) => ({ slug: e.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug: raw } = await params;
   const entry = findBreedEntry(raw);
-  if (!entry) return { title: "페이지 없음" };
-  const page = generateWhiteTerrierPage(entry);
+  if (!entry || entry.category !== "dog") return { title: "페이지 없음" };
+  const page = generateBreedPage(entry);
   const base = SITE.siteUrl.replace(/\/$/, "");
-  const url = `${base}/bunyang/${encodeURIComponent(page.slug)}`;
+  const url = `${base}${breedPath(entry)}`;
   const rawImage = page.images?.[0] || SITE.logo;
   const ogImage = rawImage.startsWith("http")
     ? rawImage
@@ -46,8 +47,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function BunyangSlugPage({ params }: Props) {
   const { slug: raw } = await params;
   const entry = findBreedEntry(raw);
-  if (!entry) notFound();
-  const page = generateWhiteTerrierPage(entry);
-  const pageUrl = `${SITE.siteUrl.replace(/\/$/, "")}/bunyang/${encodeURIComponent(page.slug)}`;
-  return <BreedArticle page={page} pageUrl={pageUrl} />;
+  if (!entry || entry.category !== "dog") notFound();
+  const page = generateBreedPage(entry);
+  const pageUrl = `${SITE.siteUrl.replace(/\/$/, "")}${breedPath(entry)}`;
+  return (
+    <BreedArticle
+      page={page}
+      pageUrl={pageUrl}
+      listHref="/bunyang"
+      listLabel="강아지분양"
+    />
+  );
 }

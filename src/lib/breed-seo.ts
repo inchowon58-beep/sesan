@@ -1,17 +1,46 @@
+import fs from "fs";
+import path from "path";
 import { SITE } from "./site";
-import { pickImages } from "./images";
 import type { SeoPage } from "./seo-pages";
-import copy from "@/data/white-terrier-copy.json";
-import {
-  BREED_INTENTS,
-  BREED_PHONE,
-  type BreedIntent,
-  type BreedEntry,
-} from "./breed-catalog";
+import { pickBreedImages } from "./breed-images";
+import { BREED_PHONE, type BreedEntry } from "./breed-catalog";
 
-/** 분양 전용 연락처 — 기존 보호소 SITE.phone과 분리 */
 export { BREED_PHONE };
 export const BREED_PHONE_TEL = "tel:05054641004";
+
+type BreedCopy = {
+  titles: string[];
+  heroSubtitles: string[];
+  heroLine2: string[];
+  heroBadges: string[];
+  missionH2: string[];
+  leadIns: string[];
+  services: { titles: string[]; descTemplate: string }[];
+  facilityH2: string[];
+  facilityParas: string[];
+  promiseTitleSets: string[][];
+  process: { title: string; descTemplate: string }[];
+  faqs: { questions: string[]; answerTemplate: string }[];
+  cta: string[];
+  relatedSuffixes: string[];
+};
+
+const copyCache = new Map<string, BreedCopy>();
+
+function loadCopy(id: string): BreedCopy {
+  const cached = copyCache.get(id);
+  if (cached) return cached;
+  const dir = path.join(process.cwd(), "src", "data", "breed-copy");
+  const file = path.join(dir, `${id}.json`);
+  const fallback = path.join(dir, "white-terrier.json");
+  const target = fs.existsSync(file) ? file : fallback;
+  if (!fs.existsSync(target)) {
+    throw new Error(`분양 문구 파일 없음: breed-copy/${id}.json`);
+  }
+  const data = JSON.parse(fs.readFileSync(target, "utf-8")) as BreedCopy;
+  copyCache.set(id, data);
+  return data;
+}
 
 function hash(s: string): number {
   let h = 0;
@@ -72,7 +101,8 @@ function fill(
   kw: string,
   brand: string,
   phone: string,
-  region: string
+  region: string,
+  label: string
 ): string {
   return template
     .replace(/\{kw\}(는|은)/g, `${kw}${eunNeun(kw)}`)
@@ -82,37 +112,47 @@ function fill(
     .replace(/\{kw\}/g, kw)
     .replace(/\{brand\}/g, brand)
     .replace(/\{phone\}/g, phone)
-    .replace(/\{region\}/g, region);
+    .replace(/\{region\}/g, region)
+    .replace(/\{label\}/g, label);
 }
 
-export function generateWhiteTerrierPage(entry: BreedEntry): SeoPage {
+/** 템플릿 1개 + 지역 치환 — 견종/묘종별 copy JSON 사용 */
+export function generateBreedPage(entry: BreedEntry): SeoPage {
+  const copy = loadCopy(entry.def.id);
   const kw = entry.keyword;
   const brand = SITE.brand;
   const phone = BREED_PHONE;
   const region = entry.region || "전국";
-  const seed = hash(`${entry.slug}|${brand}|wt1`);
+  const label = entry.def.label;
+  const isCat = entry.category === "cat";
+  const seed = hash(`${entry.slug}|${brand}|breed1`);
   const seed2 = hash(`${entry.slug}|v2`);
   const seed3 = hash(`${entry.slug}|v3`);
-  const t = (template: string) => fill(template, kw, brand, phone, region);
+  const t = (template: string) => fill(template, kw, brand, phone, region, label);
 
   const title = t(pick(copy.titles, seed));
-  const metaDescription = `${kw} 안내 — ${brand}에서 화이트테리어 책임분양·입양 상담을 진행합니다. 건강 확인, 성향 매칭, 사후 케어까지 안내합니다. 문의 ${phone}.`;
+  const metaDescription = `${kw} 안내 — ${brand}에서 ${label} 책임분양 상담을 진행합니다. 건강 확인, 성향 매칭, 사후 케어까지 안내합니다. 문의 ${phone}.`;
   const relatedIntents = seededShuffle(
     [
       ...copy.relatedSuffixes.map((s) => `${kw} ${s}`),
-      "화이트테리어분양",
-      "화이트테리어입양",
-      "강아지분양",
-      "테리어분양",
+      ...entry.def.intents,
+      isCat ? "고양이분양" : "강아지분양",
+      `${label}분양`,
     ],
     seed3
   ).slice(0, 8);
-  const metaKeywords = [kw, brand, "화이트테리어", "강아지분양", ...relatedIntents.slice(0, 5)]
+  const metaKeywords = [
+    kw,
+    brand,
+    label,
+    isCat ? "고양이분양" : "강아지분양",
+    ...relatedIntents.slice(0, 5),
+  ]
     .filter((v, i, arr) => arr.indexOf(v) === i)
     .slice(0, 12)
     .join(", ");
 
-  const h1 = `${kw} - ${brand} 화이트테리어 분양·입양 상담`;
+  const h1 = `${kw} - ${brand} ${label} 분양 상담`;
   const heroTitleLine1 = kw;
   const heroTitleLine2 = t(pick(copy.heroLine2, seed2));
   const heroBadge = t(pick(copy.heroBadges, seed3));
@@ -123,9 +163,9 @@ export function generateWhiteTerrierPage(entry: BreedEntry): SeoPage {
     h2: t(pick(copy.missionH2, seed)),
     paragraphs: [
       t(pick(copy.leadIns, seed2)),
-      `${kw}${eunNeun(kw)} 화이트테리어와의 평생 반려를 위한 첫 단계입니다. ${brand}는 보호자님의 생활 패턴과 주거 환경을 먼저 듣고, 성향이 맞는 아이를 신중하게 안내합니다.`,
+      `${kw}${eunNeun(kw)} ${label}${gwaWa(label)}의 평생 반려를 위한 첫 단계입니다. ${brand}는 보호자님의 생활 패턴과 주거 환경을 먼저 듣고, 성향이 맞는 아이를 신중하게 안내합니다.`,
       `건강 상태·접종 이력·초기 케어 방법을 투명하게 공유하며, 무리한 권유 없이 상담 중심으로 진행합니다. ${kw} 문의는 ${phone}로 가능합니다.`,
-      `하얀 코트와 활발한 기질을 지닌 화이트테리어가 새 가정에 잘 적응할 수 있도록, 입양 전 가이드와 입양 후 안부인사까지 이어갑니다.`,
+      `${label}가 새 가정에 잘 적응할 수 있도록, 분양 전 가이드와 분양 후 안부 확인까지 이어갑니다.`,
     ],
   };
 
@@ -146,7 +186,7 @@ export function generateWhiteTerrierPage(entry: BreedEntry): SeoPage {
   const promiseTitles = pick(copy.promiseTitleSets, seed);
   const promiseDescs = [
     `${kw} 상담은 아이와 보호자 모두의 조건을 먼저 확인합니다.`,
-    `건강·이력·케어 방법을 가감 없이 안내하고, 입양 후에도 문의에 응답합니다.`,
+    `건강·이력·케어 방법을 가감 없이 안내하고, 분양 후에도 문의에 응답합니다.`,
     `절차와 연락처(${phone})를 명확히 안내해 안심하고 결정할 수 있게 돕습니다.`,
   ];
   const promises = promiseTitles.map((title, i) => ({
@@ -200,7 +240,7 @@ export function generateWhiteTerrierPage(entry: BreedEntry): SeoPage {
     heroBar,
     sections: [missionSection, facilitySection, relatedSection],
     faqs,
-    images: pickImages(6, seed),
+    images: pickBreedImages(entry.def.imageBase, entry.def.imageCount, 6, seed),
     ctaText,
     services,
     servicesTitle,
@@ -215,6 +255,5 @@ export function generateWhiteTerrierPage(entry: BreedEntry): SeoPage {
   };
 }
 
-export function isBreedIntent(value: string): value is BreedIntent {
-  return (BREED_INTENTS as readonly string[]).includes(value);
-}
+/** @deprecated 이름 호환 */
+export const generateWhiteTerrierPage = generateBreedPage;

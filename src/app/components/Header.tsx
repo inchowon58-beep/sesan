@@ -10,6 +10,7 @@ const NAV = [
   { href: "/#surrender", label: "입소하기" },
   { href: "/#gallery", label: "입양하기" },
   { href: "/bunyang", label: "강아지분양" },
+  { href: "/goyang", label: "고양이분양" },
   { href: "/#guide", label: "방문안내" },
   { href: "/#articles", label: "공지사항" },
 ] as const;
